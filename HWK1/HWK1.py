@@ -51,7 +51,7 @@ if __name__ == '__main__':
         # print(comb)
 
         possibles = []
-        for i, w in reversed(list(enumerate(comb))):
+        for i, w in enumerate(comb):
             try:
                 possibles.append(words[w])
             except:
