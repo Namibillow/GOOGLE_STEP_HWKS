@@ -1,12 +1,23 @@
 from itertools import combinations
 import operator
+from dotenv import load_dotenv
+import os
+from os.path import join, dirname
+from selenium import webdriver
 
-import requests
-from bs4 import BeautifulSoup
-
+# ROUNDS = 10
+GOAL_SCORE = 1800
 URL = "https://icanhazwordz.appspot.com/"
 
-ROUNDS = 10
+# Loading values
+load_dotenv(verbose=True)
+
+dotenv_path = join(dirname(__file__), '.env')
+load_dotenv(dotenv_path)
+
+CHROME = os.environ.get("CHROME")
+NICK_NAME = os.environ.get('NAME')
+GITHUB_URL = os.environ.get('GITHUB')
 
 # POINTS
 THREE_P = {k: 3 for k in ['j', 'k', 'x', 'z']}
@@ -33,53 +44,85 @@ def build_dict():
     return words
 
 
-def get_string():
-    '''
-        - Request to a website and get 16 letters from a game board
-    return:
-        letters - a string of 16 characters given
-    '''
-    r = requests.get(URL)
-    soup = BeautifulSoup(r.content, 'html.parser')
-    ids = soup.select('tr > td')
-    divs = [i.find('div') for i in ids]
-    letters = [letter.text.lower() for letter in divs if letter]
+def main():
+    # build dictionary
+    words = build_dict()
 
-    seeds = soup.find('input', {'name': 'Seed'}).get('value')
-    print(seeds)
-    return letters
+    # Open the web browser and access to the web page
+    global driver
+    driver = webdriver.Chrome(CHROME)
+    driver.get(URL)
+
+    # Keep track of number of game played
+    game_count = 1
+    global GOAL_SCORE
+    while True:
+        ROUNDS = 10
+        # Keep track of scores
+        total_scores = 0
+        while ROUNDS:
+            # Load strings
+            letters = driver.find_elements_by_css_selector('div.letter')
+            letters = [letter.text.lower() for letter in letters]
+            letters.sort()
+            # print(letters)
+
+            word, score = get_word(letters, words)
+
+            if word:
+                # click submit
+                driver.find_element_by_id('MoveField').send_keys(word)
+                driver.find_element_by_xpath("//input[@value='Submit']").click()
+                total_scores += score
+            else:
+                # click PASS
+                driver.find_element_by_xpath("//input[@value='PASS']").click()
+
+            ROUNDS -= 1
+            # break
+        print(f'THIS IS {game_count}th GAME and score is {total_scores}')
+        game_count += 1
+        if total_scores < GOAL_SCORE:
+            # Start new game
+            driver.find_element_by_xpath("//a[@href='/']").click()
+        else:
+            # goal achieved
+            driver.find_element_by_xpath("//input[@name='NickName']").send_keys(NICK_NAME)
+            driver.find_element_by_xpath("//input[@name='URL']").send_keys(GITHUB_URL)
+            (driver.find_elements_by_xpath('//*[@name="Agent"].onclick()')).click()
+
+            break
+
+    print('DONE!')
+
+
+def get_word(letters, words):
+    # Find 2^n - 1 - n - (n choose 2) possibilities
+    # Will not consider combination of one and two letters since minimum length of letters in dictionary words are at least 3.
+    comb = [''.join(p) for i in range(3, len(letters) + 1) for p in combinations(letters, i)]
+
+    word = None
+    score = None
+    possibles = []
+    for w in comb:
+        if w in words.keys():
+            possibles.append(words[w])
+
+    if possibles:
+        scores = {}
+        # Get the best choice for this round
+        for best in possibles:
+            scores[best] = (sum([POINTS[i] for i in best]) + 1)**2
+        # print(scores)
+
+        word, score = max(scores.items(), key=operator.itemgetter(1))
+        # print("Best word is: ", word, score)
+
+    else:
+        print('NO WORDS!!')
+
+    return word, score
 
 
 if __name__ == '__main__':
-
-    # Load dictionary words
-    words = build_dict()
-
-    while ROUNDS:
-        # Load strings
-        letters = get_string()
-        letters.sort()
-        print(letters)
-
-        # Find 2^n - 1 - n - (n choose 2) possibilities
-        # Will not consider combination of one and two letters since minimum length of letters in dictionary words are at least 3.
-        comb = [''.join(p) for i in range(3, len(letters) + 1) for p in combinations(letters, i)]
-
-        possibles = []
-        for w in comb:
-            if w in words.keys():
-                possibles.append(words[w])
-
-        if possibles:
-            max_len = len(max(possibles, key=len))
-            scores = {}
-            # Get the best choice for this round
-            for best in possibles:
-                scores[best] = (sum([POINTS[i] for i in best]) + 1)**2
-            # print(scores)
-            print("Best word is: ", max(scores.items(), key=operator.itemgetter(1)))
-
-        else:
-            print('NO WORDS!!')
-        ROUNDS -= 1
-    print('DONE!')
+    main()
