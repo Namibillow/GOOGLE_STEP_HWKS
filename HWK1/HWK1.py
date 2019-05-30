@@ -6,9 +6,6 @@ from bs4 import BeautifulSoup
 
 URL = "https://icanhazwordz.appspot.com/"
 
-
-# PROMPT = "Type letters: "
-
 ROUNDS = 10
 
 # POINTS
@@ -58,8 +55,6 @@ if __name__ == '__main__':
     # Load dictionary words
     words = build_dict()
 
-    get_string()
-
     while ROUNDS:
         # Load strings
         letters = get_string()
@@ -77,11 +72,8 @@ if __name__ == '__main__':
 
         if possibles:
             max_len = len(max(possibles, key=len))
-
-            print(possibles)
-
             scores = {}
-            # Get best choice for this round
+            # Get the best choice for this round
             for best in possibles:
                 scores[best] = (sum([POINTS[i] for i in best]) + 1)**2
             # print(scores)
