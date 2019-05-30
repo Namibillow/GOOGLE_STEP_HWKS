@@ -1,77 +1,93 @@
-
 from itertools import combinations
 import operator
+
+import requests
+from bs4 import BeautifulSoup
+
+URL = "https://icanhazwordz.appspot.com/"
+
+
+# PROMPT = "Type letters: "
+
+ROUNDS = 10
+
+# POINTS
+THREE_P = {k: 3 for k in ['j', 'k', 'x', 'z']}
+TWO_P = {k: 2 for k in ['c', 'f', 'h', 'q', 'l', 'm', 'p', 'v', 'w', 'y']}
+ONE_P = {k: 1 for k in ['a', 'b', 'd', 'e', 'g', 'i', 'n', 'o', 'r', 's', 't', 'u']}
+POINTS = {**THREE_P, **TWO_P, **ONE_P}
 
 
 def build_dict():
     '''
         - Load Dictionary words
     return:
-        words - a list of loaded words
+        words - a dict of valid words, mapping the 'sorted' form of a word to its original form
     '''
     file = 'words.txt'
 
     f = open(file, "r")
 
+    # words are in all lower capitals
     words = [word.strip().lower() for word in f.readlines()]
 
+    # .join(sorted(word)) reproduces a string with its characters in sorted order and stored as key of the dict
     words = {''.join(sorted(word)): word for word in words}
     return words
 
 
+def get_string():
+    '''
+        - Request to a website and get 16 letters from a game board
+    return:
+        letters - a string of 16 characters given
+    '''
+    r = requests.get(URL)
+    soup = BeautifulSoup(r.content, 'html.parser')
+    ids = soup.select('tr > td')
+    divs = [i.find('div') for i in ids]
+    letters = [letter.text.lower() for letter in divs if letter]
+
+    seeds = soup.find('input', {'name': 'Seed'}).get('value')
+    print(seeds)
+    return letters
+
+
 if __name__ == '__main__':
-    rounds = 0
-    prompt = "Type letters: "
 
     # Load dictionary words
     words = build_dict()
 
-    # print(list(words.keys())[:10])
-    # print(list(words.values())[:10])
+    get_string()
 
-    # Points
-    three_p = {k: 3 for k in ['j', 'k', 'q', 'x', 'z']}
-    two_p = {k: 2 for k in ['c', 'f', 'h', 'l', 'm', 'p', 'v', 'w', 'y']}
-    one_p = {k: 1 for k in ['a', 'b', 'd', 'e', 'g', 'i', 'n', 'o', 'r', 's', 't', 'u']}
-    points = {**three_p, **two_p, **one_p}
-
-    while rounds < 10:
-        # given letters from the board
-        letters = input(prompt)
-        letters = letters.split()
-        # avg O(nlogn), worst O(n^2)
+    while ROUNDS:
+        # Load strings
+        letters = get_string()
         letters.sort()
         print(letters)
 
         # Find 2^n - 1 - n - (n choose 2) possibilities
         # Will not consider combination of one and two letters since minimum length of letters in dictionary words are at least 3.
-        # 65399 possibilities for 16 characters
         comb = [''.join(p) for i in range(3, len(letters) + 1) for p in combinations(letters, i)]
-        # print(len(comb))
-        # print(comb)
 
         possibles = []
-        for i, w in enumerate(comb):
-            try:
+        for w in comb:
+            if w in words.keys():
                 possibles.append(words[w])
-            except:
-                continue
 
         if possibles:
-            possibles = set(possibles)
             max_len = len(max(possibles, key=len))
-            best_possibles = [p for p in possibles if len(p) == max_len or any(c in three_p.keys() for c in p) or any(c in two_p.keys() for c in p)]
 
-            # print(best_possibles)
+            print(possibles)
 
             scores = {}
             # Get best choice for this round
-            for best in best_possibles:
-                scores[best] = (sum([points[i] for i in best]) + 1)**2
+            for best in possibles:
+                scores[best] = (sum([POINTS[i] for i in best]) + 1)**2
             # print(scores)
             print("Best word is: ", max(scores.items(), key=operator.itemgetter(1)))
 
         else:
             print('NO WORDS!!')
-        rounds += 1
+        ROUNDS -= 1
     print('DONE!')
