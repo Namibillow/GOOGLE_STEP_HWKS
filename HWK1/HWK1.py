@@ -6,7 +6,7 @@ from os.path import join, dirname
 from selenium import webdriver
 
 # ROUNDS = 10
-GOAL_SCORE = 1800
+GOAL_SCORE = 1780
 URL = "https://icanhazwordz.appspot.com/"
 
 # Loading values
@@ -65,7 +65,7 @@ def main():
             letters = driver.find_elements_by_css_selector('div.letter')
             letters = [letter.text.lower() for letter in letters]
             letters.sort()
-            # print(letters)
+            print(letters)
 
             word, score = get_word(letters, words)
 
@@ -91,7 +91,7 @@ def main():
             driver.find_element_by_xpath("//input[@name='URL']").send_keys(GITHUB_URL)
             (driver.find_elements_by_xpath('//*[@name="Agent"].onclick()')).click()
 
-            break
+        # break
 
     print('DONE!')
 
@@ -100,7 +100,6 @@ def get_word(letters, words):
     # Find 2^n - 1 - n - (n choose 2) possibilities
     # Will not consider combination of one and two letters since minimum length of letters in dictionary words are at least 3.
     comb = [''.join(p) for i in range(3, len(letters) + 1) for p in combinations(letters, i)]
-
     word = None
     score = None
     possibles = []
@@ -116,7 +115,7 @@ def get_word(letters, words):
         # print(scores)
 
         word, score = max(scores.items(), key=operator.itemgetter(1))
-        # print("Best word is: ", word, score)
+        print("Best word is: ", word, score)
 
     else:
         print('NO WORDS!!')
