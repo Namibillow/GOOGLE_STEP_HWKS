@@ -15,40 +15,18 @@ def readNumber(line, index):
     return token, index
 
 
-def readOpenParenthesis(line, index):
-    token = {'type': '('}
-    return token, index + 1
-
-
-def readCloseParenthesis(line, index):
-    token = {'type': ')'}
-    return token, index + 1
-
-
-def readPlus(line, index):
-    token = {'type': 'PLUS'}
-    return token, index + 1
-
-
-def readMinus(line, index):
-    token = {'type': 'MINUS'}
-    return token, index + 1
-
-
-def readMultiply(line, index):
-    token = {'type': 'MULTIPLY'}
-    return token, index + 1
-
-
-def readDivision(line, index):
-    token = {'type': 'DIVIDE'}
-    return token, index + 1
+TOKEN_MINUS = {'type': 'MINUS', 'precedence': 0}
+TOKEN_PLUS = {'type': 'PLUS', 'precedence': 0}
+TOKEN_MULTYPLY = {'type': 'MULTIPLY', 'precedence': 1}
+TOKEN_DIVIDE = {'type': 'DIVIDE', 'precedence': 1}
+TOKEN_OPEN_PARENT = {'type': 'OPEN_PARENT', 'precedence': 0}
+TOKEN_CLOSE_PARENT = {'type': 'CLOSE_PARENT', 'precedence': 0}
 
 
 def tokenize(line):
     ''' break an expression into tokens'''
-    operators = {'+': readPlus, '-': readMinus, '/': readDivision, '*': readMultiply,
-                 '(': readOpenParenthesis, ')': readCloseParenthesis}
+    operators = {'+': TOKEN_PLUS, '-': TOKEN_MINUS, '/': TOKEN_DIVIDE, '*': TOKEN_MULTYPLY,
+                 '(': TOKEN_OPEN_PARENT, ')': TOKEN_CLOSE_PARENT}
 
     tokens = []
     index = 0
@@ -56,20 +34,21 @@ def tokenize(line):
         if line[index].isdigit():
             (token, index) = readNumber(line, index)
         elif line[index] in operators.keys():
-            (token, index) = operators[line[index]](line, index)
+            token = operators[line[index]]
+            index += 1
         else:
             print('Invalid character found: ' + line[index])
             exit(1)
+
         tokens.append(token)
     return tokens
 
 
 def parse(tokens):
-    precedences = {'PLUS': 0, 'MINUS': 0, 'MULTIPLY': 1, 'DIVIDE': 1}
 
-    def greater_precedence(o1, o2): return precedences[o1] >= precedences[o2]
+    def greater_precedence(o1, o2): return o1['precedence'] >= o2['precedence']
 
-    def last_element(l): return l[-1]['type'] if l else None
+    def last_element(l): return l[-1] if l else None
 
     # STACKS
     numbers = []
@@ -78,18 +57,18 @@ def parse(tokens):
     for token in tokens:
         if token['type'] == 'NUMBER':
             numbers.append(token)
-        elif token['type'] == '(':
+        elif token['type'] == 'OPEN_PARENT':
             operators.append(token)
-        elif token['type'] == ')':  # if its ) then do the calculation untill encounter to (
+        elif token['type'] == 'CLOSE_PARENT':  # if its ) then do the calculation untill encounter to (
             top = last_element(operators)
-            while top and top != '(':
+            while top and top['type'] != 'OPEN_PARENT':
                 apply_op(operators, numbers)
                 top = last_element(operators)
             operators.pop()  # remove (
         else:
             top = last_element(operators)
             # process the old operator before appending new one if it has high precedence
-            while top and top not in "(" and greater_precedence(top, token['type']):
+            while top and top['type'] != "OPEN_PARENT" and greater_precedence(top, token):
                 apply_op(operators, numbers)
                 top = last_element(operators)
             operators.append(token)
@@ -105,49 +84,38 @@ def apply_op(operators, numbers):
     operator = operators.pop()
     right = numbers.pop()
     left = numbers.pop()
-    numbers.append(evaluate([left, operator, right]))
+    equation = {'left': left, 'operator': operator, 'right': right}
+    numbers.append(evaluate(equation))
 
 
 def evaluate(tokens):
-    answer = 0
-    tokens.insert(0, {'type': 'PLUS'})  # Insert a dummy '+' token
-    index = 1
+    ans = 0
+    op = tokens['operator']['type']
+    if op == "MINUS":
+        ans = tokens['left']['number'] - tokens['right']['number']
+    elif op == "PLUS":
+        ans = tokens['left']['number'] + tokens['right']['number']
+    elif op == "MULTIPLY":
+        ans = tokens['left']['number'] * tokens['right']['number']
+    elif op == "DIVIDE":  # cover 0 division
+        try:
+            ans = tokens['left']['number'] / tokens['right']['number']
+        except:
+            raise ZeroDivisionError
+    else:
+        print('Invalid syntax')
+        exit(1)
 
-    # Handle * and / first
-    while index < len(tokens):
-        number = 0
-        if tokens[index]['type'] == 'NUMBER':
-            if tokens[index - 1]['type'] == 'MULTIPLY':
-                number = tokens[index - 2]['number'] * tokens[index]['number']
-                tokens = tokens[:index - 2] + [{'type': 'NUMBER', 'number': number}] + tokens[index + 1:]
-                index -= 2
-            elif tokens[index - 1]['type'] == 'DIVIDE':
-                number = tokens[index - 2]['number'] / tokens[index]['number']
-                tokens = tokens[:index - 2] + [{'type': 'NUMBER', 'number': number}] + tokens[index + 1:]
-                index -= 2
-            elif tokens[index - 1]['type'] not in ['MINUS', "PLUS"]:
-                print('Invalid syntax')
-                exit(1)
+    return {'type': 'NUMBER', 'number': ans}
 
-        index += 1
-    index = 1
-    while index < len(tokens):
-        if tokens[index]['type'] == 'NUMBER':
-            if tokens[index - 1]['type'] == 'PLUS':
-                answer += tokens[index]['number']
-            elif tokens[index - 1]['type'] == 'MINUS':
-                answer -= tokens[index]['number']
-            else:
-                print('Invalid syntax')
-                exit(1)
-        index += 1
-    return {'type': 'NUMBER', 'number': answer}
+
+def calculate(line):
+    ''' returns the actual answer '''
+    return parse(tokenize(line))
 
 
 def test(line):
-    tokens = tokenize(line)
-    actualAnswer = parse(tokens)
-
+    actualAnswer = calculate(line)
     expectedAnswer = eval(line)
     if abs(actualAnswer - expectedAnswer) < 1e-8:
         print("PASS! (%s = %f)" % (line, expectedAnswer))
@@ -158,6 +126,8 @@ def test(line):
 # Add more tests to this function :)
 def runTest():
     print("==== Test started! ====")
+    test("1")
+    test("1/0")
     test("6/2")
     test("1+2")
     test("1.0+2.1-3")
