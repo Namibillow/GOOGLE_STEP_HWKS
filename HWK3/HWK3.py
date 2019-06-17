@@ -101,7 +101,8 @@ def evaluate(tokens):
         try:
             ans = tokens['left']['number'] / tokens['right']['number']
         except:
-            raise ZeroDivisionError
+            print('Division by zero')
+            exit(1)
     else:
         print('Invalid syntax')
         exit(1)
@@ -112,55 +113,3 @@ def evaluate(tokens):
 def calculate(line):
     ''' returns the actual answer '''
     return parse(tokenize(line))
-
-
-def test(line):
-    actualAnswer = calculate(line)
-    expectedAnswer = eval(line)
-    if abs(actualAnswer - expectedAnswer) < 1e-8:
-        print("PASS! (%s = %f)" % (line, expectedAnswer))
-    else:
-        print("FAIL! (%s should be %f but was %f)" % (line, expectedAnswer, actualAnswer))
-
-
-# Add more tests to this function :)
-def runTest():
-    print("==== Test started! ====")
-    test("1")
-    test("1/0")
-    test("6/2")
-    test("1+2")
-    test("1.0+2.1-3")
-    test("5*4/2")
-    test('1.1+2.2-3.3')
-    test('3.14/2+4')
-    test("3*3*3/9")
-    test("4.0/2.0+2")
-    test("0.1+2.1*2")
-    test("0.001*10")
-    test("10/2/5")
-    test('3.14*3.0')
-    test("5/2.0")
-    test("10./5")
-    test('1*1*1*2/2')
-    test('(1+2)*4*5')
-    test('((1*2)+3)-4')
-    test('5*4-(4/2+3)+(2*2+(2+2))')
-    test('((1+1))')
-    test('((2+2)*(3*3))')
-    print("==== Test finished! ====\n")
-
-
-if __name__ == "__main__":
-    runTest()
-
-    # decimal cannot be first character. eg: 0.13
-    # input must be valid.
-    # parenthesis must be matched
-
-    # while True:
-    #     print('> ', end="")
-    #     line = input()
-    #     tokens = tokenize(line)
-    #     answer = parse(tokens)
-    #     print("answer = %f\n" % answer)
