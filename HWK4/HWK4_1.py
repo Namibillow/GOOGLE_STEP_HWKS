@@ -130,10 +130,3 @@ if __name__ == '__main__':
         print("invalid names")
 
     print_bfs(graph, start, goal, names)
-
-
-# clone this repo
-# go to directory HWK4/
-# run command: pyhton3 HWK4-1.py
-# will ask you to input 2 numbers separating by a space
-# will return output
