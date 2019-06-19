@@ -80,7 +80,7 @@ def print_bfs(graph, start_id, goal_id, names):
         print(f"Shortest path is : ")
         print(path[::-1])
     else:
-        print("Not connected")
+        print("Oupsy Not connected!!")
 
 
 def build_graph(file_path, name_list):
@@ -106,21 +106,29 @@ def read_names(file_path):
     '''
     with open(file_path, 'r') as f:
         names = {}
+        names_rev = {}
         for line in f.readlines():
             id, name = line.split()
             names[int(id)] = name
-        return names
+            names_rev[name] = int(id)
+        return names, names_rev
 
 
 NAMES_FILE = 'nicknames.txt'
 LINKS_FILE = 'links.txt'
 
 if __name__ == '__main__':
-    names = read_names(NAMES_FILE)
+    names, names_reversed = read_names(NAMES_FILE)
 
     graph = build_graph(LINKS_FILE, names)
 
-    start, goal = map(int, input('Type two numbers between 0 to 48 separate by comma: ').split())
+    start, goal = input('Type 2 names separate by a space: ').lower().split()
+
+    try:
+        start, goal = names_reversed[start], names_reversed[goal]
+    except:
+        print("invalid names")
+
     print_bfs(graph, start, goal, names)
 
 

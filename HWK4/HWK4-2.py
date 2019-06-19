@@ -1,47 +1,8 @@
 import argparse
 
-from HWK4_1 import print_bfs
+from HWK4_1 import print_bfs, Graph
 
 # Google 457783
-
-
-class Vertex:
-    def __init__(self, id):
-        self.id = id
-        self.neighbors = []
-        self.visited = False
-        self.prev = None
-        self.dist = 0
-
-    def addNeighbor(self, neigh):
-        self.neighbors.append(neigh)
-
-    def __str__(self):
-        return str(self.id) + ' is connected to ' + str([n.id for n in self.neighbors])
-
-    def getConnections(self):
-        return self.neighbors
-
-    def getVertexInfo(self):
-        return self.id
-
-
-class Graph:
-    def __init__(self):
-        self.verticies = {}
-        self.numVerticies = 0
-
-    def addVertex(self, id):
-        self.numVerticies += 1
-        newV = Vertex(id)
-        self.verticies[id] = newV
-
-    def addEdge(self, from_id, to_id):
-        if from_id not in self.verticies.keys():
-            self.addVertex(from_id)
-        if to_id not in self.verticies.keys():
-            self.addVertex(to_id)
-        self.verticies[from_id].addNeighbor(self.verticies[to_id])
 
 
 def build_graph(file_path):
@@ -94,12 +55,12 @@ def dfs(graph, s, d, path):
                 dfs(graph, neighbor, d, path)
 
     path.pop()
-    s.visited = True
+    s.visited = False
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process search queary")
-    parser.add_argument('-s --source', required=True, type=str, help="Search term to start", default="Google")
+    parser.add_argument('-s', '--source', required=True, type=str, help="Search term to start", default="Google")
     parser.add_argument('--dest', required=True, type=str, help="Destination you would like to find a connection")
     # parser.add_argument('--dest2', type=str, help="2nd Destination you want to find")
 
@@ -118,9 +79,12 @@ if __name__ == "__main__":
 
     graph = build_graph('wikipedia_links/links.txt')
 
+    print("GRAPH IS READY TO BE EXPLORED!")
+
     if args.all_paths:
         print_dfs(graph, source, dest, wiki_titles)
     elif args.shortest:
         print_bfs(graph, source, dest, wiki_titles)
-    # elif args.cycle:
-    #     print_cycle()
+    elif args.cycle:
+        # print_cycle()
+        pass
