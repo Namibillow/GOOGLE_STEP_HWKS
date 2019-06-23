@@ -38,9 +38,10 @@ def bfs(graph, start, goal):
     Return:
         A boolean value True meaning it has a path
     """
-    is_visited = [False] * graph.numVerticies
-    dist = [0] * graph.numVerticies
-    prev = [None] * graph.numVerticies
+    numV = graph.numVerticies
+    is_visited = [False] * numV
+    dist = [0] * numV
+    prev = [None] * numV
 
     queue = [start]
     is_visited[start.id] = True
